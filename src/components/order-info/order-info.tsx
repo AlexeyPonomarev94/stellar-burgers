@@ -1,21 +1,28 @@
+import { RequestError } from '@components';
+import { selectIngredientsState } from '@slices/ingredientsSlice';
+import { fetchOrder, selectOrdersState } from '@slices/ordersSlice';
 import { Preloader, OrderInfoUI } from '@ui';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
+
+import { useDispatch, useSelector } from '@services/store';
 
 import type { TIngredient } from '@utils-types';
 
 export const OrderInfo = (): React.JSX.Element => {
-  /** TODO: взять переменные orderData и ingredients из стора */
-  const orderData = {
-    createdAt: '',
-    ingredients: [],
-    _id: '',
-    status: '',
-    name: '',
-    updatedAt: 'string',
-    number: 0,
-  };
-
-  const ingredients: TIngredient[] = [];
+  const dispatch = useDispatch();
+  const { number: orderNumber } = useParams();
+  const number = Number(orderNumber);
+  const {
+    orderDetails: orderData,
+    detailsLoading: isLoading,
+    detailsError: error,
+  } = useSelector(selectOrdersState);
+  const ingredientsState = useSelector(selectIngredientsState);
+  const { ingredients } = ingredientsState;
+  useEffect(() => {
+    void dispatch(fetchOrder(number));
+  }, [dispatch, number]);
 
   /* Готовим данные для отображения */
   const orderInfo = useMemo(() => {
@@ -57,9 +64,21 @@ export const OrderInfo = (): React.JSX.Element => {
     };
   }, [orderData, ingredients]);
 
-  if (!orderInfo) {
+  if (
+    isLoading ||
+    ingredientsState.isLoading ||
+    (!ingredientsState.isLoaded && !ingredientsState.error)
+  ) {
     return <Preloader />;
   }
+  if (error) return <RequestError message={error} />;
+  if (ingredientsState.error) return <RequestError message={ingredientsState.error} />;
+  if (!orderInfo) return <Preloader />;
 
-  return <OrderInfoUI orderInfo={orderInfo} />;
+  return (
+    <>
+      <p className="text text_type_digits-default">#{String(number).padStart(6, '0')}</p>
+      <OrderInfoUI orderInfo={orderInfo} />
+    </>
+  );
 };
