@@ -20,7 +20,7 @@ export const IngredientsCategoryUI = ({
         <BurgerIngredient
           ingredient={ingredient}
           key={ingredient._id}
-          count={ingredientsCounters[ingredient._id]}
+          count={ingredientsCounters[ingredient._id] ?? 0}
         />
       ))}
     </ul>
